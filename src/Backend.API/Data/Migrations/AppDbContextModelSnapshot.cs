@@ -337,6 +337,40 @@ namespace Backend.API.Data.Migrations
                     b.ToTable("MaintenanceSpareParts");
                 });
 
+            modelBuilder.Entity("Backend.API.Models.PasswordResetCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetCodes");
+                });
+
             modelBuilder.Entity("Backend.API.Models.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -528,7 +562,7 @@ namespace Backend.API.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Backend.API.Models.User", "Technician")
-                        .WithMany("Maintenances")
+                        .WithMany("MaintenancesAsTechnician")
                         .HasForeignKey("TechnicianId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -557,6 +591,17 @@ namespace Backend.API.Data.Migrations
                     b.Navigation("Maintenance");
 
                     b.Navigation("SparePart");
+                });
+
+            modelBuilder.Entity("Backend.API.Models.PasswordResetCode", b =>
+                {
+                    b.HasOne("Backend.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Backend.API.Models.User", b =>
@@ -606,7 +651,7 @@ namespace Backend.API.Data.Migrations
 
                     b.Navigation("Incidents");
 
-                    b.Navigation("Maintenances");
+                    b.Navigation("MaintenancesAsTechnician");
                 });
 #pragma warning restore 612, 618
         }

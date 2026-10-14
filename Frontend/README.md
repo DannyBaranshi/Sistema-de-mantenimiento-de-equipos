@@ -1,291 +1,217 @@
-# Sistema de Gestión de Mantenimiento de Equipos
 
-Plataforma para centralizar el inventario de equipos tecnológicos de una empresa,
-sus componentes, incidentes, mantenimientos, repuestos y usuarios. Proyecto
-académico desarrollado con metodología Scrum.
+Claude finished the response
+Bien, el archivo sí existe. Ahora, estando en esa misma carpeta (src\Backend.API), corre:
 
-## Estado del proyecto
+powershell
+dotnet build
+Eso te va a mostrar si el error de EquipmentHistoryResponse ya se fue o si sigue (a veces el build anterior queda en caché y conviene forzar uno limpio). Si sigue el mismo error, pégame la salida completa de dotnet build para ver la línea exacta.
 
-### Implementado y funcionando de punta a punta
 
-- **Autenticación**: registro y login con JWT. El primer usuario registrado en
-  todo el sistema se vuelve **Administrador** automáticamente; los siguientes
-  quedan como **Cliente** por defecto. Un Administrador reasigna roles después.
-- **Equipos**: registrar, consultar, editar, cambiar estado y dar de baja.
-- **Usuarios**: listado, activar/desactivar y reasignar rol (solo Administrador).
-- **Asignaciones**: asignar/liberar un equipo a un empleado (Admin/Técnico);
-  cada usuario consulta sus propias asignaciones (Admin/Técnico ven todas).
-- **Componentes de equipo**: piezas internas de un equipo (RAM, disco, etc.),
-  CRUD disponible desde el detalle del equipo (Admin/Técnico).
-- **Incidentes**: reportar fallas sobre un equipo y seguir su estado
-  (Admin/**Empleado** — nota que aquí Técnico no participa, a diferencia del
-  resto de módulos).
-- **Mantenimientos** (preventivo/correctivo): se registran desde el detalle de
-  cada equipo (Admin/Técnico). Incluyen técnico responsable, problema
-  reportado, costos de mano de obra y otros costos, repuestos usados y cierre
-  con "trabajo realizado". Ver [Módulo de mantenimiento](#módulo-de-mantenimiento).
-- **Repuestos**: catálogo con costo unitario, activar/desactivar y edición de
-  costo, en la página `/repuestos` (Admin/Técnico).
+PS C:\Users\julia\Documents\Backend\src\Backend.API> dotnet run Usando la configuración de inicio de C:\Users\julia\Documents\Backend\src\Backend.API\Properties\launchSettings.json... Compilando... C:\Users\julia\Documents\Backend\src\Backend.API\Services\SparePartService.cs(19,30): error CS1061:
 
-### Pendiente
+pasted
 
-- **Dashboard** y **Reportes**: no implementados todavía (`/dashboard` muestra
-  un placeholder).
-- **Auditoría**: no implementado.
-- **Mantenimiento — lo que el backend ya soporta y el front aún no expone**:
-  - Crear un mantenimiento **desde un incidente** (`CreateFromIncident`) y
-    vincular un `incidentId` al crearlo.
-  - **Editar** un mantenimiento (`PutMaintenance`) y cambiar su estado a
-    `IN_PROGRESS` o `CANCELLED`.
-  - Elegir el **estado final del equipo y del incidente** al cerrar
-    (`equipmentFinalStatus` / `incidentFinalStatus`). Hoy el front no los envía,
-    así que el backend usa los valores por defecto: equipo → `AVAILABLE`,
-    incidente → `RESOLVED`.
-  - Capturar `nextMaintenanceDate`, `observations`, y costos al cerrar.
-  - Ver el **historial y costo total acumulado** por equipo (`GetHistoryByEquipment`)
-    y un listado global (`GetMaintenanceList`). Los servicios ya existen en
-    `maintenanceServices.ts`, falta la UI.
-- **Técnico no puede elegirse en el formulario si no es Admin**: la lista de
-  técnicos sale de `/users` (solo Administrador). Un Técnico se asigna a sí
-  mismo automáticamente (`userId` del contexto de auth).
-- **HU-06 (transiciones de estado maestras)**: el backend permite cambiar el
-  estado de un equipo a cualquier valor sin validar una secuencia lógica
-  (ej. de "Dado de baja" podría volver a "Disponible"). Falta esa regla.
+Fixing missing database context entries for related entities.
+Fixing missing database context entries for related entities.
+Esto confirma que faltan actualizar 2 archivos que ya existían (no son nuevos, pero cambiaron): Data/AppDbContext.cs (necesita los DbSet de SpareParts, Maintenances, MaintenanceSpareParts) y Models/Incident.cs (necesita la propiedad de navegación Maintenance). Reviso el contenido correcto del zip que te mandaron:
 
-## Stack técnico
+Ran a command
+Dame un momento, reviso si hay más archivos relacionados que también cambiaron (User.cs, Equipment.cs), para no dejarte otro error a medias:
 
-| Capa | Tecnología |
-| --- | --- |
-| Backend | ASP.NET Core (.NET 10) + C# |
-| Base de datos | PostgreSQL (local vía Docker, o compartida en Neon) + Entity Framework Core |
-| Frontend | React 19 + TypeScript + Vite |
-| Enrutamiento | React Router (`HashRouter`, pensado para empaquetar como app de escritorio) |
-| Datos remotos | TanStack Query (React Query) + Axios |
-| Formularios | React Hook Form + Zod (login/registro); `useState` en los formularios de mantenimiento y repuestos |
-| Estilos | Tailwind CSS 4 |
+Ran 5 commands, shared files
+Reemplaza estos 4 archivos tal cual (misma ruta, mismo nombre, sobre los que ya tienes):
 
-## Roles del sistema
+src\Backend.API\Data\AppDbContext.cs
+src\Backend.API\Models\Incident.cs
+src\Backend.API\Models\User.cs
+src\Backend.API\Models\Equipment.cs
+Después, estando en src\Backend.API:
 
-`Administrador` · `Técnico` · `Empleado` · `Cliente`
+powershell
+dotnet build
+Si ya compila sin errores, sigue con dotnet tool run dotnet-ef database update y dotnet run.
 
-Permisos por módulo:
 
-| Módulo | Administrador | Técnico | Empleado | Cliente |
-| --- | --- | --- | --- | --- |
-| Equipos (ver) | ✅ | ✅ | ✅ | ✅ |
-| Equipos (crear/editar/baja) | ✅ | ✅ | ❌ | ❌ |
-| Componentes de equipo | ✅ | ✅ | ❌ | ❌ |
-| Incidentes | ✅ | ❌ | ✅ | ❌ |
-| Mantenimientos (ver y gestionar) | ✅ | ✅ | ❌ | ❌ |
-| Repuestos (ver y gestionar) | ✅ | ✅ | ❌ | ❌ |
-| Asignaciones (ver todas / asignar) | ✅ | ✅ | solo las propias | solo las propias |
-| Usuarios | ✅ | ❌ | ❌ | ❌ |
+Appdbcontext
+CS 
 
-> En el front, la sección de mantenimientos se muestra en el detalle del equipo
-> solo a Admin/Técnico, y el enlace "Repuestos" del sidebar también.
+Incident
+CS 
 
-## Estados
+User
+CS 
 
-- **Equipo** (`EquipmentStatus`): `AVAILABLE` (Disponible) · `IN_USE` (En uso) ·
-  `UNDER_MAINTENANCE` (En mantenimiento) · `OUT_OF_SERVICE` (Fuera de servicio) ·
-  `DECOMMISSIONED` (Dado de baja)
-- **Asignación** (`AssignmentStatus`): `ACTIVE` · `RELEASED`
-- **Incidente** (`IncidentStatus`): `OPEN` · `IN_PROGRESS` · `CLOSED` · `RESOLVED`
-- **Mantenimiento** (`MaintenanceStatus`): `OPEN` (Abierto) · `IN_PROGRESS`
-  (En progreso) · `COMPLETED` (Completado) · `CANCELLED` (Cancelado)
-- **Tipo de mantenimiento** (`MaintenanceType`): `PREVENTIVE` (Preventivo) ·
-  `CORRECTIVE` (Correctivo)
+Equipment
+CS 
+PS C:\Users\julia\Sistema-de-mantenimiento-de-equipos> dotnet run --project src/Backend.API
+Usando la configuración de inicio de src\Backend.API\Properties\launchSettings.json...
+Compilando...
+C:\Users\julia\Sistema-de-mantenimiento-de-equipos\src\Backend.API\Controllers\MaintenanceController.cs(44,36): error CS0246: El nombre del tipo o del espacio de nombres 'EquipmentHistoryResponse' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
+C:\Users\julia\Sistema-de-mantenimiento-de-equipos\src\Backend.API\Services\IMaintenanceService.cs(17,10): error CS0246: El nombre del tipo o del espacio de nombres 'EquipmentHistoryResponse' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
+C:\Users\julia\Sistema-de-mantenimiento-de-equipos\src\Backend.API\Services\MaintenanceService.cs(366,23): error CS0246: El nombre del tipo o del espacio de nombres 'EquipmentHistoryResponse' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
 
-## Módulo de mantenimiento
+No se pudo llevar a cabo la compilación. Corrija los errores de compilación y vuelva a ejecutar el proyecto.
+PS C:\Users\julia\Sistema-de-mantenimiento-de-equipos>
 
-### Flujo en la interfaz
+Ubicando la carpeta correcta del proyecto.
+Ubicando la carpeta correcta del proyecto.
+Ojo — esta vez estás en una carpeta distinta: C:\Users\julia\Sistema-de-mantenimiento-de-equipos, no en C:\Users\julia\Documents\Backend donde arreglamos esto antes. Parece que tienes dos copias separadas del proyecto en tu máquina, y el archivo EquipmentHistoryResponse.cs solo lo creaste en una de ellas.
 
-1. Entrar a **Equipos → detalle de un equipo**; al final aparece la sección
-   **Mantenimientos** (solo Admin/Técnico).
-2. Llenar el formulario: técnico (el Admin lo elige; el Técnico queda asignado
-   a sí mismo), tipo, problema reportado, costo de mano de obra y otros costos →
-   **Registrar mantenimiento**.
-3. Cada mantenimiento de la lista tiene un botón **Detalle** que permite:
-   - **Agregar repuestos** (solo repuestos activos, con cantidad) y **quitarlos**.
-   - **Cerrar mantenimiento** escribiendo el "trabajo realizado".
-   - **Eliminar mantenimiento**.
-4. Cuando el mantenimiento está `COMPLETED` o `CANCELLED` queda de solo lectura
-   (no se pueden agregar/quitar repuestos, cerrar ni eliminar desde la UI).
+S C:\Users\julia\Documents\Backend\src\Backend.API> dotnet run
+Usando la configuración de inicio de C:\Users\julia\Documents\Backend\src\Backend.API\Properties\launchSettings.json...
+Compilando...
+C:\Users\julia\Documents\Backend\src\Backend.API\Models\User.cs(3,14): error CS0101: El espacio de nombres 'Backend.API.Models' ya contiene una definición para 'Equipment'
+C:\Users\julia\Documents\Backend\src\Backend.API\Data\AppDbContext.cs(10,18): error CS0246: El nombre del tipo o del espacio de nombres 'User' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
+C:\Users\julia\Documents\Backend\src\Backend.API\Models\Assignment.cs(14,12): error CS0246: El nombre del tipo o del espacio de nombres 'User' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
+C:\Users\julia\Documents\Backend\src\Backend.API\Models\Incident.cs(15,12): error CS0246: El nombre del tipo o del espacio de nombres 'User' no se encontró (¿falta unadirectiva using o una referencia de ensamblado?)
+C:\Users\julia\Documents\Backend\src\Backend.API\Models\Maintenance.cs(23,12): error CS0246: El nombre del tipoo del espacio de nombres 'User' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
+C:\Users\julia\Documents\Backend\src\Backend.API\Models\Role.cs(7,24): error CS0246: El nombre del tipo o del espacio de nombres 'User' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
+C:\Users\julia\Documents\Backend\src\Backend.API\Services\UserService.cs(89,30): error CS0246: El nombre del tipo o del espacio de nombres 'User' no se encontró (¿falta una directiva using o una referencia de ensamblado?)
 
-### Reglas de negocio (aplicadas por el backend)
+No se pudo llevar a cabo la compilación. Corrija los errores de compilación y vuelva a ejecutar el proyecto.
+PS C:\Users\julia\Documents\Backend\src\Backend.API>
 
-- Al **crear** un mantenimiento, el equipo pasa a `UNDER_MAINTENANCE`. Si se
-  vincula a un incidente, este pasa a `IN_PROGRESS`.
-- Un incidente solo puede tener **un** mantenimiento vinculado.
-- El técnico debe estar **activo** y ser `Técnico` o `Administrador`.
-- Un mantenimiento `COMPLETED`/`CANCELLED` no admite más cambios.
-- Al **cerrar**, el mantenimiento pasa a `COMPLETED`; el equipo vuelve a
-  `AVAILABLE` y el incidente vinculado a `RESOLVED` (salvo que se indique otro
-  estado final en la petición).
-- Un repuesto **inactivo** no se puede agregar, y el mismo repuesto no puede
-  repetirse dentro de un mismo mantenimiento.
-- `unitCostAtUse` guarda el costo del repuesto **al momento de usarlo**, así que
-  cambiar el costo en el catálogo no altera mantenimientos anteriores.
-- `totalCost = laborCost + otherCosts + sparePartsCost`.
+Resolviendo un conflicto de definición duplicada en el espacio de nombres.
+Resolviendo un conflicto de definición duplicada en el espacio de nombres.
+Ahí está — por el mensaje User.cs(3,14): ya contiene una definición para 'Equipment', parece que accidentalmente pegaste el contenido de Equipment.cs dentro del archivo User.cs (o viceversa). Por eso el archivo User.cs ya no tiene la clase User adentro, y todo lo que depende de User deja de encontrarse.
 
-### Endpoints que consume el front
+Abre src\Backend.API\Models\User.cs y revisa qué tiene — si ves public class Equipment ahí, está mal. Debe tener exactamente esto (y nada más):
 
-Base: `VITE_API_URL` (ej. `http://localhost:5255/api`).
+csharp
+namespace Backend.API.Models;
 
-| Método | Ruta | Uso | Usado en UI |
-| --- | --- | --- | --- |
-| GET | `/maintenance/GetMaintenancesByEquipment/{equipmentId}` | Lista por equipo | ✅ |
-| POST | `/maintenance/PostNewMaintenance` | Crear | ✅ |
-| POST | `/maintenance/CloseMaintenance/{id}` | Cerrar | ✅ |
-| POST | `/maintenance/AddSparePart/{maintenanceId}` | Agregar repuesto | ✅ |
-| DELETE | `/maintenance/RemoveSparePart/{maintenanceId}/{maintenanceSparePartId}` | Quitar repuesto | ✅ |
-| DELETE | `/maintenance/DeleteMaintenance/{id}` | Eliminar | ✅ |
-| PUT | `/maintenance/PutMaintenance/{id}` | Editar / cambiar estado | ⏳ servicio listo |
-| POST | `/maintenance/CreateFromIncident/{incidentId}` | Crear desde incidente | ⏳ servicio listo |
-| GET | `/maintenance/GetHistoryByEquipment/{equipmentId}` | Historial y costos | ⏳ servicio listo |
-| GET | `/sparepart/GetSparePartList?includeInactive=` | Listar repuestos | ✅ |
-| POST | `/sparepart/PostNewSparePart` | Crear repuesto | ✅ |
-| PUT | `/sparepart/PutSparePart/{id}` | Editar (costo, nombre...) | ✅ |
-| PATCH | `/sparepart/DeactivateSparePart/{id}` · `/ReactivateSparePart/{id}` | Activar/desactivar | ✅ |
+public class User
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string EmailHash { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public bool Active { get; set; } = true;
+    public int FailedAttempts { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
-Todos requieren JWT. Las escrituras exigen rol Administrador o Técnico.
+    public Guid? RoleId { get; set; }
+    public Role? Role { get; set; }
 
-### Archivos del front relacionados
+    public ICollection<Assignment>? Assignments { get; set; }
+    public ICollection<Incident>? Incidents { get; set; }
+    public ICollection<Maintenance>? MaintenancesAsTechnician { get; set; }
+}
+Y por separado, src\Backend.API\Models\Equipment.cs debe tener la clase Equipment (la que te di en el mensaje anterior) — confirma que no quedaron mezclados entre sí.
 
-```md
-Frontend/src/
-├── components/MaintenanceSection.tsx   # Formulario + lista + detalle (se monta en EquipoDetailPage)
-├── hooks/useMaintenance.ts             # useMaintenancesByEquipment, useSpareParts
-├── pages/SparePartsPage.tsx            # Catálogo de repuestos (/repuestos)
-├── services/maintenanceServices.ts     # Llamadas HTTP de mantenimiento
-├── services/sparePartServices.ts       # Llamadas HTTP de repuestos
-├── types/maintenance.ts                # Tipos, etiquetas en español y DTOs
-└── types/sparePart.ts
-```
+Usando la configuración de inicio de C:\Users\julia\Documents\Backend\src\Backend.API\Properties\launchSettings.json...
+Compilando...
+C:\Users\julia\Documents\Backend\src\Backend.API\Data\AppDbContext.cs(85,34): error CS1061: "Equipment" no contiene una definición para "Maintenances" ni un método de extensión accesible "Maintenances" que acepte un primer argumento del tipo "Equipment" (¿falta alguna directiva using o una referencia de ensamblado?)
+C:\Users\julia\Documents\Backend\src\Backend.API\Services\IncidentService.cs(76,13): error CS0200: No se puede asignar a la propiedad o el indizador 'Incident.MaintenanceId' porque es de solo lectura
+C:\Users\julia\Documents\Backend\src\Backend.API\Services\IncidentService.cs(102,48): error CS0200: No se puedeasignar a la propiedad o el indizador 'Incident.MaintenanceId' porque es de solo lectura
 
-## Rutas del frontend
+No se pudo llevar a cabo la compilación. Corrija los errores de compilación y vuelva a ejecutar el proyecto.
+PS C:\Users\julia\Documents\Backend\src\Backend.API>
 
-| Ruta | Acceso | Página |
-| --- | --- | --- |
-| `/` | Público | Login |
-| `/register` | Público | Registro |
-| `/dashboard` | Autenticado | Placeholder (pendiente) |
-| `/equipos`, `/equipos/nuevo`, `/equipos/:id`, `/equipos/:id/editar` | Autenticado | Equipos (el detalle incluye componentes, incidentes y mantenimientos) |
-| `/asignaciones` | Autenticado | Asignaciones |
-| `/repuestos` | Administrador, Técnico | Catálogo de repuestos |
-| `/usuarios` | Administrador | Gestión de usuarios |
+Fixing missing fields left over from an incomplete file replacement.
+Fixing missing fields left over from an incomplete file replacement.
+Dos cosas más — Equipment.cs parece que no quedó actualizado (le falta Maintenances), y IncidentService.cs es una versión vieja que no es compatible con el nuevo Incident.cs (trata de asignar MaintenanceId directamente, pero ahora es una propiedad calculada de solo lectura). Reviso el IncidentService.cs correcto:
 
-## Estructura del repositorio
+Ran 2 commands, shared files
+1. Reemplaza src\Backend.API\Services\IncidentService.cs completo con el que te acabo de dar — tu versión actual intenta asignar MaintenanceId directamente, y eso ya no es posible con el nuevo modelo.
 
-```md
-Backend/
-├── src/Backend.API/        # API .NET (Controllers, Services, Models, DTOs, Data, Migrations)
-├── Frontend/                # Aplicación React + Vite
-│   └── src/
-│       ├── services/          # Llamadas HTTP a la API (api.ts, authServices.ts, equipmentServices.ts, maintenanceServices.ts...)
-│       ├── components/        # Sidebar, ProtectedRoute, LoginCard, StatusBadge, MaintenanceSection...
-│       ├── context/           # authContext (AuthProvider / useAuth)
-│       ├── hooks/              # useAuthMutations, useEquipmentList, useUsers, useAssignments, useMaintenance...
-│       ├── pages/               # LoginPage, RegisterPage, EquipoListPage, EquipoDetailPage, SparePartsPage, UsersPage...
-│       ├── schemas/             # Validaciones con Zod
-│       └── types/                # Tipos TypeScript calcados de los DTOs del backend
-├── docker-compose.yml       # Postgres local (opcional, alternativa a Neon)
-└── .env (no se sube)        # Secretos locales
-```
+2. Vuelve a abrir tu src\Backend.API\Models\Equipment.cs actual y compáralo línea por línea con el de arriba — debe terminar exactamente en public ICollection<Maintenance>? Maintenances { get; set; }. Si no tiene esa línea, es que el contenido no se guardó bien la vez pasada (puede que se haya guardado en el archivo equivocado otra vez, como pasó con User.cs/Equipment.cs).
 
-## Requisitos previos
+Después de los dos, corre dotnet build de nuevo y pégame el resultado.
 
-- .NET SDK 10
-- Node.js 18+ y npm
-- Docker Desktop (si usas Postgres local) **o** acceso a la base compartida en Neon
 
-## Cómo correrlo
+Incidentservice
+CS 
 
-### Opción A: base de datos compartida en Neon (recomendada para trabajar en equipo)
+Equipment
+CS 
+Presented file
+Presented file
+Corregido: LoginCard.tsx ya no usa mutateAsync. Reemplaza el tuyo con ese archivo.
 
-```powershell
-dotnet user-secrets init --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Database:Password" "<password-de-neon>" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Jwt:Key" "<el-mismo-que-usa-el-equipo>" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Encryption:Key" "<la-misma-que-usa-el-equipo>" --project src/Backend.API/Backend.API.csproj
-```
+Si prefieres no reemplazarlo completo, solo cambia dos líneas en el tuyo:
 
-`Jwt:Key` y `Encryption:Key` **deben ser idénticos** a los del resto del equipo
-(si no, no vas a poder leer correos/teléfonos cifrados ni validar tokens).
-`Database:Password` sí es exclusivo de la base de Neon.
+tsx
+const { mutate, isPending, error } = useLogin();
+tsx
+const data = await mutate(parsed.data);
+La segunda va dentro del try, donde antes decía await mutateAsync(parsed.data). La línea siguiente, navigate(roleHome(data.role ?? null)), queda igual. Así un Cliente entra a /mantenimientos y el resto a /equipos. Con eso desaparece el error rojo de TypeScript.
 
-```powershell
-dotnet tool restore
-dotnet tool run dotnet-ef database update --project src/Backend.API --startup-project src/Backend.API
-dotnet run --project src/Backend.API
-```
 
-> La API también aplica las migraciones automáticamente al iniciar. La última
-> migración, `AddMaintenanceAndSpareParts`, crea las tablas de mantenimientos y
-> repuestos: **haz `git pull` y reinicia la API** antes de probar el módulo.
+Logincard
+Code·TSX 
+Checking whether the dashboard route still exists in the code.
+Checking whether the dashboard route still exists in the code.
+Sí lo tiene, pero nunca fue un dashboard real, solo un marcador de posición. Lo puedes ver en dos sitios:
 
-### Opción B: Postgres local con Docker (independiente, no requiere nada del equipo)
+App.tsx: la ruta /dashboard muestra únicamente el texto "Dashboard (pendiente)".
+Sidebar.tsx: el link "Dashboard" sigue en la sección General, para todos los roles.
+Después de iniciar sesión ahora caes en Equipos (o en Mantenimientos si eres Cliente), no en el Dashboard, y por eso puede parecer que desapareció.
 
-```powershell
-docker compose up -d
-dotnet user-secrets init --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Database:Host" "localhost" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Database:Name" "database" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Database:User" "postgres" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Database:Password" "postgres" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Jwt:Key" "<genera-tu-propia-clave-larga>" --project src/Backend.API/Backend.API.csproj
-dotnet user-secrets set "Encryption:Key" "<genera-tu-propia-clave-base64-de-32-bytes>" --project src/Backend.API/Backend.API.csproj
-dotnet tool restore
-dotnet tool run dotnet-ef database update --project src/Backend.API --startup-project src/Backend.API
-dotnet run --project src/Backend.API
-```
+El backend no tiene un endpoint de dashboard, pero el cliente pidió "cantidad y estado de equipos y próximos mantenimientos", y eso se puede armar con lo que ya existe:
 
-Backend disponible en `http://localhost:5255`.
+Personal interno: equipos por estado, mantenimientos abiertos y los próximos por fecha, a partir de la lista de equipos y de mantenimientos.
+Cliente: solo lo que su rol permite, es decir, mantenimientos abiertos, próximos y costo total.
+¿Lo armo así?
 
-### Frontend
+admin@test.com / Admin123456. CREDENCIALES NO VALIDADS
 
-```powershell
-cd Frontend
-npm install
-npm run dev
-```
+Ran a command
+Es muy probable que ese administrador nunca se haya creado. Se crea al arrancar el backend, pero solo si existen los secretos Bootstrap:*, y esos comandos no estaban en la lista línea por línea que te pasé después. Solo puse allí los de Database, Jwt y Encryption.
 
-Vite abre en `http://localhost:5173`. Confirma que `Frontend/.env` (créalo si no
-existe, no se sube al repo) tenga:
+Desde SRC\Backend.API, un comando por línea:
 
-```env
-VITE_API_URL=http://localhost:5255/api
-```
+powershell
+dotnet user-secrets set "Bootstrap:AdminEmail" "admin@test.com"
+powershell
+dotnet user-secrets set "Bootstrap:AdminPassword" "Admin123456"
+powershell
+dotnet user-secrets set "Bootstrap:AdminFullName" "Juliana"
+Después detén el backend (Ctrl+C) y vuelve a correr dotnet run. En el log busca esta línea:
 
-Otros scripts: `npm run build` (compila TypeScript y genera el build),
-`npm run lint` y `npm run preview`.
+Se creó el Administrador inicial (...)
+Si sale, ya puedes entrar con admin@test.com / Admin123456. Si en su lugar aparece una advertencia o error, revisa estos casos:
 
-### Probar el módulo de mantenimiento
+"El correo de Bootstrap:AdminEmail ya pertenece a un usuario existente": si alguna vez registraste admin@test.com desde el formulario (quedó como Cliente), el backend no lo promueve. Cambia el correo en el secreto, por ejemplo admin@local.test, y reinicia.
+"No se pudo verificar si existe un Administrador. ¿Están aplicadas las migraciones?": corre dotnet tool run dotnet-ef database update y reinicia.
+Ya existe un Administrador activo: el bootstrap no hace nada. Entonces el problema sería la contraseña, o que la cuenta quedó bloqueada 15 minutos por demasiados intentos fallidos.
+Mientras pruebas, ten en cuenta el límite de 10 intentos de login por minuto, así que no insistas muchas veces seguidas.
 
-1. Inicia sesión como **Administrador** o **Técnico** (con Empleado/Cliente no
-   verás la sección ni el enlace de Repuestos).
-2. Crea al menos un repuesto en **Repuestos** (`/repuestos`).
-3. Abre el detalle de un equipo, registra un mantenimiento y agrégale el repuesto.
-4. Ciérralo y verifica que el equipo vuelve a "Disponible".
 
-## Notas importantes
 
-- `Encryption:Key` **nunca debe cambiarse** una vez que hay datos guardados —
-  cifra correos y teléfonos; cambiarla hace ilegibles los datos existentes.
-- Si usas Neon, el **primer usuario registrado en esa base compartida** es el
-  que queda como Administrador — probablemente ya exista uno, pídele a tu
-  equipo el usuario de prueba en vez de registrarte esperando ser admin.
-- El `.env` del frontend y los `user-secrets` del backend son locales a cada
-  máquina — no se suben a git. Cada quien los configura una vez.
 
-## Equipo del proyecto
 
-| Rol | Responsabilidad |
-| --- | --- |
-| Cliente | Necesidad del negocio, prioridades y validación |
-| Product Owner | Gestionar y priorizar el Product Backlog |
-| Scrum Master | Facilitar Scrum y eliminar impedimentos |
-| Frontend | Interfaz y experiencia de usuario |
-| Backend | Lógica, servicios, datos e integración |
-| QA | Pruebas y validación de calidad |
-| Seguridad | Requisitos, riesgos y controles de seguridad |
+Claude is AI and can make mistakes. Please double-check responses.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

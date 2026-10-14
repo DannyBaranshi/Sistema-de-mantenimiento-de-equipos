@@ -23,6 +23,8 @@ export default function Sidebar() {
 
   // Personal interno = todos los roles menos Cliente (Roles.Staff en el backend)
   const isStaff = role !== "Cliente";
+  // Dashboard y reportes: Administrador y Cliente (mismos roles que el backend)
+  const canSeeDashboard = role === "Administrador" || role === "Cliente";
   const canManageEquipment = role === "Administrador" || role === "Técnico";
 
   return (
@@ -34,12 +36,14 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-6">
-        <div>
-          <p className="px-4 text-xs font-semibold text-gray-500 uppercase mb-1">General</p>
-          <Link to="/dashboard" className={linkClass("/dashboard")}>
-            Dashboard
-          </Link>
-        </div>
+        {canSeeDashboard && (
+          <div>
+            <p className="px-4 text-xs font-semibold text-gray-500 uppercase mb-1">General</p>
+            <Link to="/dashboard" className={linkClass("/dashboard")}>
+              Dashboard
+            </Link>
+          </div>
+        )}
 
         <div>
           <p className="px-4 text-xs font-semibold text-gray-500 uppercase mb-1">Gestión</p>
@@ -66,9 +70,14 @@ export default function Sidebar() {
               Usuarios
             </Link>
           )}
-          {(role === "Administrador" || role === "Cliente") && (
+          {canSeeDashboard && (
             <Link to="/reportes" className={linkClass("/reportes")}>
               Reportes
+            </Link>
+          )}
+          {role === "Administrador" && (
+            <Link to="/auditoria" className={linkClass("/auditoria")}>
+              Auditoría
             </Link>
           )}
         </div>

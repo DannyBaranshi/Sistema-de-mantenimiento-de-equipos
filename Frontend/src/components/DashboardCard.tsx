@@ -8,26 +8,21 @@ interface DashboardCardProps {
 }
 
 const ACCENTS = {
-  blue: "border-blue-500/30 bg-blue-500/5",
-  green: "border-green-500/30 bg-green-500/5",
-  yellow: "border-yellow-500/30 bg-yellow-500/5",
-  red: "border-red-500/30 bg-red-500/5",
-  gray: "border-gray-500/30 bg-gray-500/5",
+  blue: "border-blue-200 bg-blue-50 text-blue-700",
+  green: "border-green-200 bg-green-50 text-green-700",
+  yellow: "border-yellow-200 bg-yellow-50 text-yellow-700",
+  red: "border-red-200 bg-red-50 text-red-700",
+  gray: "border-gray-200 bg-gray-50 text-gray-700",
 };
 
-export default function DashboardCard({
-  title,
-  value,
-  icon,
-  accent = "blue",
-}: DashboardCardProps) {
+export default function DashboardCard({ title, value, icon, accent = "blue" }: DashboardCardProps) {
   return (
     <div className={`rounded-xl border p-5 ${ACCENTS[accent]}`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-400">{title}</p>
-        {icon && <div className="text-gray-400">{icon}</div>}
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+        {icon && <div>{icon}</div>}
       </div>
-      <p className="mt-2 text-3xl font-semibold text-white">{value}</p>
+      <p className="mt-2 text-3xl font-semibold text-gray-900">{value}</p>
     </div>
   );
 }

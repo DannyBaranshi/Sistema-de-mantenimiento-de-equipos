@@ -13,10 +13,15 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // En /auth/* un 401 significa "credenciales incorrectas", no "sesión vencida":
+    // ahí el formulario debe mostrar el error en vez de recargar la página.
+    const isAuthCall = String(error.config?.url ?? "").includes("/auth/");
+    if (error.response?.status === 401 && !isAuthCall) {
       localStorage.removeItem("token");
       localStorage.removeItem("role");
-      window.location.href = "/login";
+      localStorage.removeItem("fullName");
+      window.location.hash = "#/";
+      window.location.reload();
     }
     return Promise.reject(error);
   }

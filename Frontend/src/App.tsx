@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import ReportsPage from "./pages/ReportsPage";
+import AuditPage from "./pages/AuditPage";
 import { useAuth } from "./context/authContext";
 import { roleHome } from "./utils/roleHome";
 
@@ -41,8 +42,13 @@ export default function App() {
 
         {/* Cualquier usuario autenticado, incluido el Cliente */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/mantenimientos" element={<MaintenanceHistoryPage />} />
+        </Route>
+
+        {/* El backend solo expone dashboard y reportes a Administrador y Cliente */}
+        <Route element={<ProtectedRoute allowedRoles={["Administrador", "Cliente"]} />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/reportes" element={<ReportsPage />} />
         </Route>
 
         {/* Personal interno: Administrador, Técnico y Empleado (no Cliente) */}
@@ -58,14 +64,9 @@ export default function App() {
           <Route path="/repuestos" element={<SparePartsPage />} />
         </Route>
 
-        <Route
-          element={<ProtectedRoute allowedRoles={["Administrador", "Cliente"]} />}
-        >
-          <Route path="/reportes" element={<ReportsPage />} />
-        </Route>
-
         <Route element={<ProtectedRoute allowedRoles={["Administrador"]} />}>
           <Route path="/usuarios" element={<UsersPage />} />
+          <Route path="/auditoria" element={<AuditPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

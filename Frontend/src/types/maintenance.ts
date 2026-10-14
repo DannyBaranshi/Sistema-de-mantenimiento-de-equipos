@@ -1,3 +1,6 @@
+import type { EquipmentStatus } from "./equipment";
+import type { Incident, IncidentStatus } from "./incident";
+
 export type MaintenanceType = "PREVENTIVE" | "CORRECTIVE";
 export type MaintenanceStatus = "OPEN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
@@ -76,6 +79,10 @@ export interface CloseMaintenanceRequest {
   otherCosts?: number;
   nextMaintenanceDate?: string;
   observations?: string;
+  // Solo se aceptan AVAILABLE, IN_USE, OUT_OF_SERVICE o DECOMMISSIONED
+  equipmentFinalStatus?: EquipmentStatus;
+  // Solo RESOLVED o CLOSED; aplica si el mantenimiento tiene incidente
+  incidentFinalStatus?: IncidentStatus;
 }
 
 export interface AddSparePartToMaintenanceRequest {
@@ -91,4 +98,5 @@ export interface EquipmentHistory {
   totalOtherCosts: number;
   totalCost: number;
   maintenances: Maintenance[];
+  incidents: Incident[];
 }

@@ -5,6 +5,7 @@ import { useEquipmentList } from "../hooks/useEquipmentList";
 import { useUsers } from "../hooks/useUsers";
 import { assignEquipment, releaseAssignment } from "../services/assignmentServices";
 import { useAuth } from "../context/authContext";
+import { getApiErrorMessage } from "../lib/errors";
 
 export default function AssignmentsPage() {
   const { role } = useAuth();
@@ -29,8 +30,8 @@ export default function AssignmentsPage() {
       setObservations("");
       setFormError(null);
     },
-    onError: (err: any) => {
-      setFormError(err.response?.data?.message ?? "No se pudo asignar el equipo.");
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "No se pudo asignar el equipo."));
     },
   });
 

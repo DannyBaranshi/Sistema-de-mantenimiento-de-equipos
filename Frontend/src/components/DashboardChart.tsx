@@ -40,20 +40,17 @@ export default function DashboardChart({ data }: DashboardChartProps) {
   ];
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#0f1729] p-6">
-      <h2 className="mb-4 text-lg font-semibold text-white">Equipos por estado</h2>
+    <div className="rounded-xl border p-6">
+      <h2 className="mb-4 text-lg font-semibold">Equipos por estado</h2>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-          <XAxis dataKey="label" tick={{ fill: "#9ca3af", fontSize: 12 }} />
-          <YAxis tick={{ fill: "#9ca3af", fontSize: 12 }} allowDecimals={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="label" tick={{ fill: "#4b5563", fontSize: 12 }} />
+          <YAxis tick={{ fill: "#4b5563", fontSize: 12 }} allowDecimals={false} />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "#111527",
-              border: "1px solid #ffffff20",
-              borderRadius: "8px",
-              color: "#fff",
-            }}
+            cursor={{ fill: "#f3f4f6" }}
+            contentStyle={{ borderRadius: "8px" }}
+            formatter={(v) => [v, "Equipos"]}
           />
           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
             {chartData.map((entry, index) => (

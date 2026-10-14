@@ -9,6 +9,7 @@ import {
   getEquipmentById,
   updateEquipment,
 } from "../services/equipmentServices";
+import { getApiErrorMessage } from "../lib/errors";
 
 const schema = z.object({
   internalCode: z.string().min(1, "Requerido"),
@@ -71,7 +72,9 @@ export function EquipoFormPage() {
 
   // El backend responde 409 con { message } si el código interno
   // o el número de serie ya existen.
-  const conflictMessage = (mutation.error as any)?.response?.data?.message;
+  const conflictMessage = mutation.error
+    ? getApiErrorMessage(mutation.error)
+    : undefined;
 
   return (
     <form

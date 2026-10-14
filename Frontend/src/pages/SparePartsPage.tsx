@@ -7,6 +7,7 @@ import {
   deactivateSparePart,
   reactivateSparePart,
 } from "../services/sparePartServices";
+import { getApiErrorMessage } from "../lib/errors";
 
 export default function SparePartsPage() {
   const { data, isLoading, error } = useSpareParts(true);
@@ -34,7 +35,9 @@ export default function SparePartsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["spareparts"] }),
   });
 
-  const createError = (createMutation.error as any)?.response?.data?.message;
+  const createError = createMutation.error
+    ? getApiErrorMessage(createMutation.error)
+    : undefined;
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();

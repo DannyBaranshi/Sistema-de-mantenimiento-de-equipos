@@ -9,6 +9,7 @@ import { EQUIPMENT_STATUS_LABEL } from "../types/equipment";
 import { INCIDENT_STATUS_LABEL, type IncidentStatus } from "../types/incident";
 import { useAuth } from "../context/authContext";
 import MaintenanceSection from "../components/MaintenanceSection";
+import { getApiErrorMessage } from "../lib/errors";
 
 export default function EquipoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,7 +78,9 @@ export default function EquipoDetailPage() {
     createIncidentMutation.mutate({ equipmentId, description: incidentDescription });
   }
 
-  const incidentError = (createIncidentMutation.error as any)?.response?.data?.message;
+  const incidentError = [createIncidentMutation, updateIncidentMutation, deleteIncidentMutation]
+    .map((m) => (m.error ? getApiErrorMessage(m.error) : null))
+    .find(Boolean);
 
   if (loadingEquipment) return <p className="p-8">Cargando equipo...</p>;
   if (!equipment) return <p className="p-8 text-red-600">Equipo no encontrado.</p>;
@@ -199,7 +202,7 @@ export default function EquipoDetailPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {canManageIncidents ? (
+                  {canManageIncidents && !inc.maintenanceId ? (
                     <select
                       value={inc.status}
                       onChange={(e) =>
@@ -210,18 +213,22 @@ export default function EquipoDetailPage() {
                       }
                       className="rounded border px-2 py-1 text-xs"
                     >
-                      {Object.entries(INCIDENT_STATUS_LABEL).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
+                      {Object.entries(INCIDENT_STATUS_LABEL)
+                        .filter(([value]) => value !== "IN_PROGRESS" || inc.status === "IN_PROGRESS")
+                        .map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
                     </select>
                   ) : (
                     <span className="text-xs">{INCIDENT_STATUS_LABEL[inc.status]}</span>
                   )}
-                  {canManageIncidents && (
+                  {canManageIncidents && !inc.maintenanceId && (
                     <button
-                      onClick={() => deleteIncidentMutation.mutate(inc.id)}
+                      onClick={() => {
+                        if (confirm("¿Eliminar este incidente?")) deleteIncidentMutation.mutate(inc.id);
+                      }}
                       className="text-red-600 text-xs"
                     >
                       Eliminar

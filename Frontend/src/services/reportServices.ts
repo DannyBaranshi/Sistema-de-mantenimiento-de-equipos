@@ -14,7 +14,12 @@ function buildQuery(filters: ReportFilters, format: ReportFormat): string {
   return params.toString();
 }
 
-async function downloadReport(path: string, filters: ReportFilters, format: ReportFormat) {
+async function downloadReport(
+  path: string,
+  baseName: string,
+  filters: ReportFilters,
+  format: ReportFormat
+) {
   const query = buildQuery(filters, format);
   const res = await api.get(`${path}?${query}`, {
     responseType: "blob",
@@ -25,7 +30,8 @@ async function downloadReport(path: string, filters: ReportFilters, format: Repo
       ? res.headers["content-type"]
       : "application/octet-stream";
   const extension = format === "pdf" ? "pdf" : "xlsx";
-  const fileName = `reporte.${extension}`;
+  const stamp = new Date().toISOString().slice(0, 10);
+  const fileName = `reporte-${baseName}-${stamp}.${extension}`;
 
   const blob = new Blob([res.data], { type: contentType });
   const url = window.URL.createObjectURL(blob);
@@ -39,13 +45,13 @@ async function downloadReport(path: string, filters: ReportFilters, format: Repo
 }
 
 export async function downloadEquipmentsReport(filters: ReportFilters, format: ReportFormat) {
-  return downloadReport("/reports/GetEquipments", filters, format);
+  return downloadReport("/reports/GetEquipments", "equipos", filters, format);
 }
 
 export async function downloadMaintenancesReport(filters: ReportFilters, format: ReportFormat) {
-  return downloadReport("/reports/GetMaintenances", filters, format);
+  return downloadReport("/reports/GetMaintenances", "mantenimientos", filters, format);
 }
 
 export async function downloadCostsReport(filters: ReportFilters, format: ReportFormat) {
-  return downloadReport("/reports/GetCosts", filters, format);
+  return downloadReport("/reports/GetCosts", "costos", filters, format);
 }
